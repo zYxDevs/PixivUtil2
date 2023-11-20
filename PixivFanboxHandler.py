@@ -28,8 +28,9 @@ def process_fanbox_artist_by_id(caller, config, artist_id, end_page, title_prefi
         name_flag = "%artist%" in formats
         token_flag = "%member_token%" in formats
         if name_flag or token_flag:
-            result = caller.__dbManager__.selectMemberByMemberId(artist.artistId)
-            if result:
+            if result := caller.__dbManager__.selectMemberByMemberId(
+                artist.artistId
+            ):
                 artist.artistName = result[1]
                 artist.artistToken = result[7]
                 PixivHelper.print_and_log("info", f"Using saved artist name and token from db: {artist.artistName}, {artist.artistToken}")
@@ -62,11 +63,10 @@ def process_fanbox_artist_by_id(caller, config, artist_id, end_page, title_prefi
                     process_fanbox_post(caller, config, post, artist)
                 except KeyboardInterrupt:
                     choice = input("Keyboard Interrupt detected, continue to next post? (Y/N)").rstrip("\r")
-                    if choice.upper() == 'N':
-                        PixivHelper.print_and_log("info", f"FANBOX artist: {artist}, processing aborted")
-                        return
-                    else:
+                    if choice.upper() != 'N':
                         continue
+                    PixivHelper.print_and_log("info", f"FANBOX artist: {artist}, processing aborted")
+                    return
             else:
                 PixivHelper.print_and_log("info", f"Unsupported post type: {post.imageId} => {post.type}")
             image_count += 1
@@ -96,9 +96,8 @@ def process_fanbox_post(caller, config, post: PixivModelFanbox.FanboxPost, artis
     post_files = []
 
     flag_processed = False
-    if config.checkDBProcessHistory:
-        result = db.selectPostByPostId(post.imageId)
-        if result:
+    if result := db.selectPostByPostId(post.imageId):
+        if config.checkDBProcessHistory:
             updated_date = result[5]
             if updated_date is not None and post.updatedDateDatetime <= datetime_z.parse_datetime(updated_date):
                 flag_processed = True
@@ -108,7 +107,6 @@ def process_fanbox_post(caller, config, post: PixivModelFanbox.FanboxPost, artis
             br.fanboxUpdatePost(post)
 
         if ((not post.is_restricted) or config.downloadCoverWhenRestricted) and (not flag_processed) and config.downloadCover:
-            # cover image
             if post.coverImageUrl:
                 # fake the image_url for filename compatibility, add post id and pagenum
                 fake_image_url = post.coverImageUrl.replace("{0}/cover/".format(post.imageId),
@@ -218,20 +216,24 @@ def process_fanbox_post(caller, config, post: PixivModelFanbox.FanboxPost, artis
 
         filename = PixivHelper.sanitize_filename(filename, config.rootDirectory)
         if config.writeImageInfo:
-            post.WriteInfo(filename + ".txt")
-        if config.writeHtml:
-            if post.type == "article" or (len(post.images) >= config.minImageCountForNonArticle and len(post.body_text) > config.minTextLengthForNonArticle):
+            post.WriteInfo(f"{filename}.txt")
+        if post.type == "article" or (len(post.images) >= config.minImageCountForNonArticle and len(post.body_text) > config.minTextLengthForNonArticle):
+            if config.writeHtml:
                 html_template = PixivConstant.HTML_TEMPLATE
                 if os.path.isfile("template.html"):
                     reader = PixivHelper.open_text_file("template.html")
                     html_template = reader.read()
                     reader.close()
-                post.WriteHtml(html_template, config.useAbsolutePathsInHtml, filename + ".html")
+                post.WriteHtml(
+                    html_template,
+                    config.useAbsolutePathsInHtml,
+                    f"{filename}.html",
+                )
 
         if config.writeUrlInDescription:
             PixivHelper.write_url_in_description(post, config.urlBlacklistRegex, config.urlDumpFilename)
     finally:
-        if len(post_files) > 0:
+        if post_files:
             db.insertPostImages(post_files)
 
     db.updatePostUpdateDate(post.imageId, post.updatedDate)

@@ -75,7 +75,7 @@ def get_logger(level=None, reload=False):
 
     if __logger is None:
         script_path = module_path()
-        __logger = logging.getLogger('PixivUtil' + PixivConstant.PIXIVUTIL_VERSION)
+        __logger = logging.getLogger(f'PixivUtil{PixivConstant.PIXIVUTIL_VERSION}')
         if _config is None or _config.disableLog:
             logging.disable()
             if _config is not None and _config.disableLog:
@@ -83,9 +83,7 @@ def get_logger(level=None, reload=False):
         else:
             logging.disable(logging.NOTSET)
             if level is None:
-                level = logging.DEBUG
-                if _config is not None:
-                    level = _config.logLevel
+                level = _config.logLevel if _config is not None else logging.DEBUG
             __logger.setLevel(level)
             __logHandler__ = logging.handlers.RotatingFileHandler(script_path + os.sep + PixivConstant.PIXIVUTIL_LOG_FILE,
                                                                   maxBytes=PixivConstant.PIXIVUTIL_LOG_SIZE,
@@ -122,10 +120,10 @@ def sanitize_filename(name, rootDir=None):
     # Strip leading/trailing space for each directory
     # Issue #627: remove trailing '.'
     # Ensure Windows reserved filenames are prefixed with _
-    stripped_name = list()
+    stripped_name = []
     for item in name.split(os.sep):
         if Path(item).is_reserved():
-            item = '_' + item
+            item = f'_{item}'
         stripped_name.append(item.strip(" .\t\r\n"))
     name = os.sep.join(stripped_name)
 
@@ -150,7 +148,7 @@ def sanitize_filename(name, rootDir=None):
         # TODO: allow macOS higher limits, HFS+ allows 255 UTF-16 chars, and APFS 255 UTF-8 chars
         while len(name.encode('utf-8')) > 249:
             filename, extname = os.path.splitext(name)
-            name = filename[:len(filename) - 1] + extname
+            name = filename[:-1] + extname
         name = name.replace('\\', '/')
 
     if rootDir is not None:
@@ -194,7 +192,7 @@ def make_filename(nameFormat: str,
         imageExtension = imageExtension.split('?')[0]
 
     # Issue #940
-    if nameFormat.find('%force_extension') > -1:
+    if '%force_extension' in nameFormat:
         to_replace_ext = re.findall("(%force_extension{.*}%)", nameFormat)
         forced_ext = re.findall("{(.*)}", to_replace_ext[0])
         nameFormat = nameFormat.replace(to_replace_ext[0], "")
@@ -226,7 +224,7 @@ def make_filename(nameFormat: str,
         nameFormat = nameFormat.replace('%translated_title%', replace_path_separator(imageInfo.imageTitle))
 
     # formatted works date/time, ex. %works_date_fmt{%Y-%m-%d}%
-    if nameFormat.find("%works_date_fmt") > -1:
+    if "%works_date_fmt" in nameFormat:
         to_replace = re.findall("(%works_date_fmt{.*}%)", nameFormat)
         date_format = re.findall("{(.*)}", to_replace[0])
         nameFormat = nameFormat.replace(to_replace[0], imageInfo.worksDateDateTime.strftime(date_format[0]))
@@ -239,10 +237,12 @@ def make_filename(nameFormat: str,
     nameFormat = nameFormat.replace('%date%', date.today().strftime('%Y%m%d'))
 
     # formatted date/time, ex. %date_fmt{%Y-%m-%d}%
-    if nameFormat.find("%date_fmt") > -1:
+    if "%date_fmt" in nameFormat:
         to_replace2 = re.findall("(%date_fmt{.*}%)", nameFormat)
         date_format2 = re.findall("{(.*)}", to_replace2[0])
-        nameFormat = nameFormat.replace(to_replace2[0], datetime.today().strftime(date_format2[0]))
+        nameFormat = nameFormat.replace(
+            to_replace2[0], datetime.now().strftime(date_format2[0])
+        )
 
     # get the page index & big mode if manga
     page_index = ''
@@ -255,7 +255,7 @@ def make_filename(nameFormat: str,
             page_index = idx[0]
             page_number = str(int(page_index) + 1)
             padding = len(str(imageInfo.imageCount)) or 1
-            page_number = str(page_number)
+            page_number = page_number
             page_number = page_number.zfill(padding)
         if fileUrl.find('_big') > -1 or fileUrl.find('_m') <= -1:
             page_big = 'big'
@@ -280,8 +280,8 @@ def make_filename(nameFormat: str,
 
     image_tags = imageInfo.imageTags
     if tagsLimit != -1:
-        tagsLimit = tagsLimit if tagsLimit < len(imageInfo.imageTags) else len(imageInfo.imageTags)
-        image_tags = image_tags[0:tagsLimit]
+        tagsLimit = min(tagsLimit, len(imageInfo.imageTags))
+        image_tags = image_tags[:tagsLimit]
 
     # 701
     if useTranslatedTag:
@@ -333,15 +333,15 @@ def make_filename(nameFormat: str,
         nameFormat = nameFormat.replace('%image_response_count%', '')
 
     # clean up double space
-    while nameFormat.find('  ') > -1:
+    while '  ' in nameFormat:
         nameFormat = nameFormat.replace('  ', ' ')
 
     # clean up double slash
-    while nameFormat.find('//') > -1 or nameFormat.find('\\\\') > -1:
+    while '//' in nameFormat or '\\\\' in nameFormat:
         nameFormat = nameFormat.replace('//', '/').replace('\\\\', '\\')
 
     if appendExtension:
-        nameFormat = nameFormat.strip() + '.' + imageExtension
+        nameFormat = f'{nameFormat.strip()}.{imageExtension}'
 
     if _config and len(_config.customCleanUpRe) > 0:
         nameFormat = re.sub(_config.customCleanUpRe, '', nameFormat)

@@ -60,7 +60,7 @@ def process_novel(caller,
                 PixivHelper.print_and_log('warn', f"\rLocal file timestamp match with remote: {filename} => {novel.worksDateDateTime}")
                 return
         if config.alwaysCheckFileSize:
-            temp_filename = filename + ".!tmp"
+            temp_filename = f"{filename}.!tmp"
             novel.write_content(temp_filename)
             file_size = os.path.getsize(temp_filename)
             old_size = os.path.getsize(filename)

@@ -245,7 +245,7 @@ class TestPixivImage(unittest.TestCase):
         # self.assertEqual(image.worksTools, u'SAI')
         # print(image.imageTags)
         joinedResult = " ".join(image.imageTags)
-        self.assertEqual(joinedResult.find("VOCALOID") > -1, True)
+        self.assertEqual("VOCALOID" in joinedResult, True)
 
     def testPixivImageParseNoTags(self):
         p = open('./test/test-image-no_tags.htm', 'r', encoding="utf-8")
@@ -679,8 +679,7 @@ def main():
     big_suite = unittest.TestSuite(suites_list)
 
     runner = unittest.TextTestRunner(verbosity=5)
-    results = runner.run(big_suite)
-    return results
+    return runner.run(big_suite)
 
 
 if __name__ == '__main__':

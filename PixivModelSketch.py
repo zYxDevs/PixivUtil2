@@ -19,7 +19,7 @@ class SketchArtist(object):
     next_page = None
 
     def __init__(self, artist_id, page, tzInfo=None, dateFormat=None):
-        self.posts = list()
+        self.posts = []
         self.dateFormat = dateFormat
         self._tzInfo = tzInfo
 
@@ -49,11 +49,7 @@ class SketchArtist(object):
         post_json = demjson3.decode(page)
 
         links_root = post_json["_links"]
-        if "next" in links_root:
-            self.next_page = links_root["next"]["href"]
-        else:
-            self.next_page = None
-
+        self.next_page = links_root["next"]["href"] if "next" in links_root else None
         for item in post_json["data"]["items"]:
             post_id = item["id"]
             post = SketchPost(post_id, None, None, self._tzInfo, self.dateFormat)
@@ -96,8 +92,8 @@ class SketchPost(object):
     image_response_count = -1
 
     def __init__(self, post_id, artist, page, tzInfo=None, dateFormat=None):
-        self.imageUrls = list()
-        self.imageResizedUrls = list()
+        self.imageUrls = []
+        self.imageResizedUrls = []
         self.imageId = int(post_id)
         self._tzInfo = tzInfo
         self.dateFormat = dateFormat
@@ -115,8 +111,8 @@ class SketchPost(object):
         # post title taken from username
         self.imageTitle = page["user"]["name"]
         self.imageCaption = page["text"]
-        self.imageTags = list()
-        self.tags = list()
+        self.imageTags = []
+        self.tags = []
         for tag in page["tags"]:
             self.imageTags.append(tag)
             self.tags.append(PixivTagData(tag, None))

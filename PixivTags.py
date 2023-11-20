@@ -38,13 +38,14 @@ class PixivTags:
 
     def parseMemberTags(self, artist, memberId, query=""):
         '''process artist result and return the image list, https://www.pixiv.net/ajax/user/25661139/illustmanga/tag/<search_tags>'''
-        self.itemList = list()
+        self.itemList = []
         self.memberId = memberId
         self.query = query
         self.haveImage = artist.haveImages
         self.isLastPage = artist.isLastPage
-        for image in artist.imageList:
-            self.itemList.append(PixivTagsItem(int(image), 0, 0))
+        self.itemList.extend(
+            PixivTagsItem(int(image), 0, 0) for image in artist.imageList
+        )
 
     def parseTags(self, page, query="", curr_page=1):
         '''From search by tags page, https://www.pixiv.net/ajax/search/artworks/<search_tags>'''
@@ -57,7 +58,7 @@ class PixivTags:
             raise PixivException(f'Image Error: {payload["message"]}', errorCode=PixivException.SERVER_ERROR)
 
         # parse images information
-        self.itemList = list()
+        self.itemList = []
         ad_container_count = 0
         for item in payload["body"]["illustManga"]["data"]:
             if "isAdContainer" in item and item["isAdContainer"]:
@@ -74,17 +75,13 @@ class PixivTags:
             tag_item = PixivTagsItem(image_id, bookmarkCount, imageResponse, ai_type)
             self.itemList.append(tag_item)
 
-        self.haveImage = False
-        if len(self.itemList) > 0:
-            self.haveImage = True
-
+        self.haveImage = bool(self.itemList)
         # search page info
         self.availableImages = int(payload["body"]["illustManga"]["total"])
         # assume it always return 60 images, including the advert
-        if len(self.itemList) + ad_container_count == PixivTags.POSTS_PER_PAGE:
-            self.isLastPage = False
-        else:
-            self.isLastPage = True
+        self.isLastPage = (
+            len(self.itemList) + ad_container_count != PixivTags.POSTS_PER_PAGE
+        )
         return self.itemList
 
     def PrintInfo(self):
@@ -102,7 +99,7 @@ class PixivTags:
     @staticmethod
     def parseTagsList(filename):
         '''read tags.txt and return the tags list'''
-        tags = list()
+        tags = []
 
         if not os.path.exists(filename):
             raise PixivException(f"File doesn't exists or no permission to read: {filename}", PixivException.FILE_NOT_EXISTS_OR_NO_PERMISSION)

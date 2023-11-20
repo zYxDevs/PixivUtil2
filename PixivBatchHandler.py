@@ -22,7 +22,6 @@ class JobOption(object):
     def loadConfig(self, path=None):
         # dummy method for compatibility
         PixivHelper.print_and_log("debug", "Called from JobOption, will not reloading the config...")
-        pass
 
     def __init__(self, job, _config):
         if _config is None:
@@ -39,7 +38,7 @@ class JobOption(object):
 
 
 def handle_members(caller, job, job_name, job_option):
-    member_ids = list()
+    member_ids = []
     if "member_ids" in job:
         print("Multi Member IDs")
         member_ids = job["member_ids"]
@@ -50,18 +49,10 @@ def handle_members(caller, job, job_name, job_option):
         print(f"No member_id or member_ids found in {job_name}!")
         return
 
-    start_page = 1
-    if "start_page" in job:
-        start_page = int(job["start_page"])
-    end_page = 0
-    if "end_page" in job:
-        end_page = int(job["end_page"])
-    from_bookmark = False
-    if "from_bookmark" in job:
-        from_bookmark = bool(job["from_bookmark"])
-    tags = None
-    if "tags" in job and len(job["tags"]) > 0:
-        tags = job["tags"]
+    start_page = int(job["start_page"]) if "start_page" in job else 1
+    end_page = int(job["end_page"]) if "end_page" in job else 0
+    from_bookmark = bool(job["from_bookmark"]) if "from_bookmark" in job else False
+    tags = job["tags"] if "tags" in job and len(job["tags"]) > 0 else None
     include_sketch = False
     if "include_sketch" in job and len(job["include_sketch"]) > 0:
         include_sketch = bool(job["include_sketch"])
@@ -88,7 +79,7 @@ def handle_members(caller, job, job_name, job_option):
 
 
 def handle_images(caller: PixivUtil2, job, job_name, job_option):
-    image_ids = list()
+    image_ids = []
     if "image_ids" in job:
         image_ids = job["image_ids"]
         print(f"Found multiple images: {len(image_ids)}")
@@ -116,18 +107,10 @@ def handle_tags(caller: PixivUtil2, job, job_name, job_option):
         print(f"No tags found or empty tags in {job_name}!")
         return
 
-    start_page = 1
-    if "start_page" in job:
-        start_page = int(job["start_page"])
-    end_page = 0
-    if "end_page" in job:
-        end_page = int(job["end_page"])
-    wild_card = True
-    if "wild_card" in job:
-        wild_card = bool(job["wild_card"])
-    title_caption = False
-    if "title_caption" in job:
-        title_caption = bool(job["title_caption"])
+    start_page = int(job["start_page"]) if "start_page" in job else 1
+    end_page = int(job["end_page"]) if "end_page" in job else 0
+    wild_card = bool(job["wild_card"]) if "wild_card" in job else True
+    title_caption = bool(job["title_caption"]) if "title_caption" in job else False
     start_date = None
     if "start_date" in job and len(job["start_date"]) == 10:
         try:
@@ -140,9 +123,7 @@ def handle_tags(caller: PixivUtil2, job, job_name, job_option):
             end_date = PixivHelper.check_date_time(job["end_date"])
         except BaseException:
             raise Exception(f"Invalid end_date: {job['end_date']} in {job_name}.")
-    member_id = None
-    if "member_id" in job:
-        member_id = job["member_id"]
+    member_id = job["member_id"] if "member_id" in job else None
     bookmark_count = None
     if "bookmark_count" in job:
         bookmark_count = int(job["bookmark_count"])

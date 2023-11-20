@@ -147,38 +147,27 @@ class PixivArtist:
                 self.artistBackground = root["background"]["url"]
 
     def ParseImages(self, payload):
-        self.imageList = list()
+        self.imageList = []
 
         if "works" in payload:  # filter by tags
-            for image in payload["works"]:
-                self.imageList.append(image["id"])
+            self.imageList.extend(image["id"] for image in payload["works"])
             self.totalImages = int(payload["total"])
 
-            if len(self.imageList) > 0:
+            if self.imageList:
                 self.haveImages = True
 
-            if len(self.imageList) + self.offset == self.totalImages:
-                self.isLastPage = True
-            else:
-                self.isLastPage = False
-
+            self.isLastPage = len(self.imageList) + self.offset == self.totalImages
             return
         else:
             if "illusts" in payload:  # all illusts
-                for image in payload["illusts"]:
-                    self.imageList.append(image)
+                self.imageList.extend(iter(payload["illusts"]))
             if "manga" in payload:  # all manga
-                for image in payload["manga"]:
-                    self.imageList.append(image)
+                self.imageList.extend(iter(payload["manga"]))
             self.imageList = sorted(self.imageList, reverse=True, key=int)
             self.totalImages = len(self.imageList)
             # print("{0} {1} {2}".format(self.offset, self.limit, self.totalImages))
 
-            if self.offset + self.limit >= self.totalImages:
-                self.isLastPage = True
-            else:
-                self.isLastPage = False
-
+            self.isLastPage = self.offset + self.limit >= self.totalImages
             if len(self.imageList) > 0:
                 self.haveImages = True
 
@@ -206,5 +195,4 @@ class PixivArtist:
         if jss is None or len(jss["content"]) == 0:
             return None  # Possibly error page
 
-        payload = demjson3.decode(jss["content"])
-        return payload
+        return demjson3.decode(jss["content"])

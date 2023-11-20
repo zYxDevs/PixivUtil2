@@ -43,15 +43,14 @@ def downloadMemberIdUsingOauth(member_id, filename):
     response = __br__._oauth_manager.get_user_info(member_id)
     js = response.text
     try:
-        dump = open(filename, 'wb')
-        dump.write(js.encode())
-        dump.close()
+        with open(filename, 'wb') as dump:
+            dump.write(js.encode())
     except BaseException:
         raise
 
 
 def downloadPage(url, filename):
-    print("Dumping " + url + " to " + filename)
+    print(f"Dumping {url} to {filename}")
     try:
         html = __br__.open(url).read()
     except mechanize.HTTPError as e:
@@ -60,9 +59,8 @@ def downloadPage(url, filename):
         else:
             raise
     try:
-        dump = open(filename, 'wb')
-        dump.write(html)
-        dump.close()
+        with open(filename, 'wb') as dump:
+            dump.write(html)
     except BaseException:
         raise
 

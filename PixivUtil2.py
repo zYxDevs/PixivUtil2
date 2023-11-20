@@ -51,7 +51,7 @@ if platform.system() == "Windows":
         pw = ""
         while 1:
             c = msvcrt.getch().decode()
-            if c == '\r' or c == '\n':
+            if c in ['\r', '\n']:
                 break
             if c == '\003':
                 raise KeyboardInterrupt
@@ -81,12 +81,12 @@ __config__ = PixivConfig.PixivConfig()
 configfile = "config.ini"
 __dbManager__ = None
 __br__: PixivBrowserFactory.PixivBrowser = None
-__blacklistTags = list()
-__suppressTags = list()
+__blacklistTags = []
+__suppressTags = []
 __log__ = None
-__errorList = list()
-__blacklistMembers = list()
-__blacklistTitles = list()
+__errorList = []
+__blacklistMembers = []
+__blacklistTitles = []
 __valid_options = ()
 __seriesDownloaded = []
 
@@ -97,9 +97,28 @@ dfilename = ""
 def header():
     PADDING = 60
     print("┌" + "".ljust(PADDING - 2, "─") + "┐")
-    print("│ " + Fore.YELLOW + Back.BLACK + Style.BRIGHT + f"PixivDownloader2 version {PixivConstant.PIXIVUTIL_VERSION}".ljust(PADDING - 3, " ") + Style.RESET_ALL + "│")
-    print("│ " + Fore.CYAN + Back.BLACK + Style.BRIGHT + PixivConstant.PIXIVUTIL_LINK.ljust(PADDING - 3, " ") + Style.RESET_ALL + "│")
-    print("│ " + Fore.YELLOW + Back.BLACK + Style.BRIGHT + f"Donate at {Fore.CYAN}{Style.BRIGHT}{PixivConstant.PIXIVUTIL_DONATE}".ljust(PADDING + 6, " ") + Style.RESET_ALL + "│")
+    print(
+        f"│ {Fore.YELLOW}{Back.BLACK}{Style.BRIGHT}"
+        + f"PixivDownloader2 version {PixivConstant.PIXIVUTIL_VERSION}".ljust(
+            PADDING - 3, " "
+        )
+        + Style.RESET_ALL
+        + "│"
+    )
+    print(
+        f"│ {Fore.CYAN}{Back.BLACK}{Style.BRIGHT}"
+        + PixivConstant.PIXIVUTIL_LINK.ljust(PADDING - 3, " ")
+        + Style.RESET_ALL
+        + "│"
+    )
+    print(
+        f"│ {Fore.YELLOW}{Back.BLACK}{Style.BRIGHT}"
+        + f"Donate at {Fore.CYAN}{Style.BRIGHT}{PixivConstant.PIXIVUTIL_DONATE}".ljust(
+            PADDING + 6, " "
+        )
+        + Style.RESET_ALL
+        + "│"
+    )
     print("└" + "".ljust(PADDING - 2, "─") + "┘")
 
 
@@ -199,8 +218,7 @@ def menu():
 
     read_lists()
 
-    sel = input('Input: ').rstrip("\r")
-    return sel
+    return input('Input: ').rstrip("\r")
 
 
 def menu_download_by_member_id(opisvalid, args, options):
@@ -209,7 +227,7 @@ def menu_download_by_member_id(opisvalid, args, options):
     page = 1
     end_page = 0
     include_sketch = False
-    member_ids = list()
+    member_ids = []
 
     if opisvalid and len(args) > 0:
         include_sketch = options.include_sketch
@@ -275,13 +293,11 @@ def menu_download_by_member_bookmark(opisvalid, args, options):
     __log__.info('Member Bookmark mode (11).')
     page = 1
     end_page = 0
-    i = 0
     current_member = 1
     if opisvalid and len(args) > 0:
-        valid_ids = list()
-        for member_id in args:
+        valid_ids = []
+        for i, member_id in enumerate(args):
             print("%d/%d\t%f %%" % (i, len(args), 100.0 * i / float(len(args))))
-            i += 1
             try:
                 test_id = int(member_id)
                 valid_ids.append(test_id)
@@ -289,7 +305,6 @@ def menu_download_by_member_bookmark(opisvalid, args, options):
                 PixivHelper.print_and_log('error', f"Member ID: {member_id} is not valid")
                 global ERROR_CODE
                 ERROR_CODE = -1
-                continue
         if __br__._myId in valid_ids:
             PixivHelper.print_and_log('error', f"Member ID: {__br__._myId} is your own id, use option 6 instead.")
         for mid in valid_ids:
@@ -371,11 +386,7 @@ def menu_download_by_tags(opisvalid, args, options):
         tags = input('Tags: ').rstrip("\r")
         bookmark_count = input('Bookmark Count: ').rstrip("\r") or None
         wildcard = input('Use Partial Match (s_tag) [y/n, default is no]: ').rstrip("\r") or 'n'
-        if wildcard.lower() == 'y':
-            wildcard = True
-        else:
-            wildcard = False
-
+        wildcard = wildcard.lower() == 'y'
         # Issue #834
         if __br__._isPremium:
             msg = 'Sorting Order [date_d|date|popular_d|popular_male_d|popular_female_d]? '
@@ -520,7 +531,7 @@ def menu_download_from_online_user_bookmark(opisvalid, args, options):
     else:
         arg = input("Include Private bookmarks [y/n/o, default is no]: ").rstrip("\r") or 'n'
         arg = arg.lower()
-        if arg == 'y' or arg == 'n' or arg == 'o':
+        if arg in ['y', 'n', 'o']:
             hide = arg
         else:
             print("Invalid args: ", arg)
@@ -569,7 +580,7 @@ def menu_download_from_online_image_bookmark(opisvalid, args, options):
         if tag != '':
             use_image_tag = input("Use Image Tags as the filter [y/n, default is no]? ").rstrip("\r") or 'n'
             use_image_tag = use_image_tag.lower()
-            use_image_tag = True if use_image_tag == 'y' else False
+            use_image_tag = use_image_tag == 'y'
 
     PixivBookmarkHandler.process_image_bookmark(sys.modules[__name__],
                                                 __config__,
@@ -601,11 +612,7 @@ def menu_download_from_tags_list(opisvalid, args, options):
     else:
         filename = input("Tags list filename [tags.txt]: ").rstrip("\r") or './tags.txt'
         wildcard = input('Use Wildcard[y/n, default is no]: ').rstrip("\r") or 'n'
-        if wildcard.lower() == 'y':
-            wildcard = True
-        else:
-            wildcard = False
-
+        wildcard = wildcard.lower() == 'y'
         # Issue #834
         if __br__._isPremium:
             msg = 'Sorting Order [date_d|date|popular_d|popular_male_d|popular_female_d, default is date_d]? '
@@ -739,9 +746,19 @@ def menu_download_by_group_id(opisvalid, args, options):
 
 def menu_ugoira_reencode(opisvalid, args, options):
     __log__.info('Re-encode Ugoira (u)')
-    msg = Fore.YELLOW + Style.NORMAL + f'WARNING: THIS ACTION CANNOT BE UNDO !' + Style.RESET_ALL
+    msg = (
+        Fore.YELLOW
+        + Style.NORMAL
+        + 'WARNING: THIS ACTION CANNOT BE UNDO !'
+        + Style.RESET_ALL
+    )
     PixivHelper.print_and_log(None, msg)
-    msg = Fore.YELLOW + Style.NORMAL + f'You are about to re-encode and overwrite all of your stored ugoira and its related files (gif, webm ...).' + Style.RESET_ALL
+    msg = (
+        Fore.YELLOW
+        + Style.NORMAL
+        + 'You are about to re-encode and overwrite all of your stored ugoira and its related files (gif, webm ...).'
+        + Style.RESET_ALL
+    )
     PixivHelper.print_and_log(None, msg)
     arg = input(Fore.YELLOW + Style.BRIGHT + 'Do you really want to proceed ? [y/n, default is no]: ' + Style.RESET_ALL).rstrip("\r") or 'n'
     sure = arg.lower()
@@ -886,7 +903,7 @@ def menu_export_from_online_image_bookmark(opisvalid, args, options):
         if tag != '':
             use_image_tag = input("Use Image Tags as the filter [y/n, default is no]? ").rstrip("\r") or 'n'
             use_image_tag = use_image_tag.lower()
-            use_image_tag = True if use_image_tag == 'y' else False
+            use_image_tag = use_image_tag == 'y'
         filename = input(f"Filename (default is '{filename}'): ").rstrip("\r") or filename
 
     PixivBookmarkHandler.export_image_bookmark(sys.modules[__name__],
@@ -915,7 +932,7 @@ def menu_fanbox_download_from_list(op_is_valid, via, args, options):
     else:
         end_page = int(input("End Page (default is 0) = ").rstrip("\r") or 0)
 
-    ids = list()
+    ids = []
     if via in [PixivModelFanbox.FanboxArtist.SUPPORTING, PixivModelFanbox.FanboxArtist.FOLLOWING]:
         ids = __br__.fanboxGetArtistList(via)
     elif via == PixivModelFanbox.FanboxArtist.CUSTOM:
@@ -949,11 +966,10 @@ def menu_fanbox_download_from_list(op_is_valid, via, args, options):
                                                            title_prefix=f"{index} of {len(ids)}")
         except KeyboardInterrupt:
             choice = input("Keyboard Interrupt detected, continue to next artist (Y/N)").rstrip("\r")
-            if choice.upper() == 'N':
-                PixivHelper.print_and_log("info", f"Artist id: {artist_id}, processing aborted")
-                break
-            else:
+            if choice.upper() != 'N':
                 continue
+            PixivHelper.print_and_log("info", f"Artist id: {artist_id}, processing aborted")
+            break
         except PixivException as pex:
             PixivHelper.print_and_log("error", f"Error processing FANBOX Artist in {via_type} list: {artist_id} ==> {pex.message}")
 
@@ -973,11 +989,10 @@ def menu_fanbox_download_by_post_id(op_is_valid, args, options):
             del post
         except KeyboardInterrupt:
             choice = input("Keyboard Interrupt detected, continue to next post (Y/N)").rstrip("\r")
-            if choice.upper() == 'N':
-                PixivHelper.print_and_log("info", f"Post id: {post_id}, processing aborted")
-                break
-            else:
+            if choice.upper() != 'N':
                 continue
+            PixivHelper.print_and_log("info", f"Post id: {post_id}, processing aborted")
+            break
         except PixivException as pex:
             PixivHelper.print_and_log("error", f"Error processing FANBOX post: {post_id} ==> {pex.message}")
 
@@ -1005,11 +1020,10 @@ def menu_fanbox_download_by_id(op_is_valid, args, options):
                                                            title_prefix=f"{index} of {len(member_ids)}")
         except KeyboardInterrupt:
             choice = input("Keyboard Interrupt detected, continue to next artist (Y/N)").rstrip("\r")
-            if choice.upper() == 'N':
-                PixivHelper.print_and_log("info", f"Artist id: {member_id}, processing aborted")
-                break
-            else:
+            if choice.upper() != 'N':
                 continue
+            PixivHelper.print_and_log("info", f"Artist id: {member_id}, processing aborted")
+            break
         except PixivException as pex:
             PixivHelper.print_and_log("error", f"Error processing FANBOX Artist: {member_id} ==> {pex.message}")
 
@@ -1038,11 +1052,10 @@ def menu_fanbox_download_pixiv_by_fanbox_id(op_is_valid, args, options):
                                                            title_prefix=f"{index} of {len(member_ids)}")
         except KeyboardInterrupt:
             choice = input("Keyboard Interrupt detected, continue to next artist (Y/N)").rstrip("\r")
-            if choice.upper() == 'N':
-                PixivHelper.print_and_log("info", f"Artist id: {member_id}, processing aborted")
-                break
-            else:
+            if choice.upper() != 'N':
                 continue
+            PixivHelper.print_and_log("info", f"Artist id: {member_id}, processing aborted")
+            break
         except PixivException as pex:
             PixivHelper.print_and_log("error", f"Error processing FANBOX Artist: {member_id} ==> {pex.message}")
 
@@ -1145,7 +1158,7 @@ def menu_download_by_rank(op_is_valid, args, options, valid_modes=None):
             else:
                 print("Invalid Content Type.")
         while True:
-            print(f"Specify the ranking date, valid type is YYYYMMDD (default: today)")
+            print("Specify the ranking date, valid type is YYYYMMDD (default: today)")
             date = input('Date: ').rstrip("\r").lower()
             try:
                 if date != '':

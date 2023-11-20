@@ -26,11 +26,13 @@ class PixivListItem(object):
     @staticmethod
     def parseList(filename, rootDir=None):
         '''read list.txt and return the list of PixivListItem'''
-        members = list()
+        members = []
 
         if not os.path.exists(filename):
-            raise PixivException("File doesn't exists or no permission to read: " + filename,
-                                 errorCode=PixivException.FILE_NOT_EXISTS_OR_NO_WRITE_PERMISSION)
+            raise PixivException(
+                f"File doesn't exists or no permission to read: {filename}",
+                errorCode=PixivException.FILE_NOT_EXISTS_OR_NO_WRITE_PERMISSION,
+            )
 
         reader = PixivHelper.open_text_file(filename)
         line_no = 1
@@ -51,17 +53,18 @@ class PixivListItem(object):
                     # http://www.pixiv.net/member_illust.php?id=<member_id>
                     # http://www.pixiv.net/member.php?id=<member_id>
                     parsed = parse.urlparse(items[0])
-                    if parsed.path == "/member.php" or parsed.path == "/member_illust.php":
+                    if parsed.path in ["/member.php", "/member_illust.php"]:
                         query_str = parse.parse_qs(parsed.query)
                         if 'id' in query_str:
                             member_id = int(query_str["id"][0])
                         else:
                             PixivHelper.print_and_log(
-                                'error', "Cannot detect member id from url: " + items[0])
+                                'error',
+                                f"Cannot detect member id from url: {items[0]}",
+                            )
                             continue
                     else:
-                        PixivHelper.print_and_log(
-                            'error', "Unsupported url detected: " + items[0])
+                        PixivHelper.print_and_log('error', f"Unsupported url detected: {items[0]}")
                         continue
 
                 else:

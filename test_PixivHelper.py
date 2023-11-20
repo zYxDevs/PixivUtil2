@@ -191,7 +191,9 @@ class TestPixivHelper(unittest.TestCase):
         # change the config value
         _config = PixivConfig.PixivConfig()
         _config.avatarNameFormat = ''
-        _config.filenameFormat = "%artist% (%member_id%)" + os.sep + "%urlFilename% - %title%"
+        _config.filenameFormat = (
+            f"%artist% (%member_id%){os.sep}%urlFilename% - %title%"
+        )
         _config.tagsSeparator = ' '
         _config.tagsLimit = 0
         PixivHelper.set_config(_config)
@@ -213,7 +215,9 @@ class TestPixivHelper(unittest.TestCase):
         targetDir = ''
         _config = PixivConfig.PixivConfig()
         _config.avatarNameFormat = ''
-        _config.filenameFormat = '%member_token% (%member_id%)' + os.sep + '%image_id% - %title% - %tags%'
+        _config.filenameFormat = (
+            f'%member_token% (%member_id%){os.sep}%image_id% - %title% - %tags%'
+        )
         _config.tagsSeparator = ' '
         _config.tagsLimit = 0
         PixivHelper.set_config(_config)
@@ -251,7 +255,7 @@ class TestPixivHelper(unittest.TestCase):
         targetDir = os.path.abspath('.')
         _config = PixivConfig.PixivConfig()
         _config.avatarNameFormat = ''
-        _config.filenameFormat = '%member_token% (%member_id%)' + os.sep + '%R-18%' + os.sep + '%image_id% - %title% - %tags%'
+        _config.filenameFormat = f'%member_token% (%member_id%){os.sep}%R-18%{os.sep}%image_id% - %title% - %tags%'
         _config.tagsSeparator = ' '
         _config.tagsLimit = 0
         PixivHelper.set_config(_config)
@@ -267,7 +271,7 @@ class TestPixivHelper(unittest.TestCase):
         info = json.loads(p2.read())
         artist.ParseInfo(info, False, False)
 
-        targetDir = os.path.abspath(os.sep + 'images')
+        targetDir = os.path.abspath(f'{os.sep}images')
         _config = PixivConfig.PixivConfig()
         _config.avatarNameFormat = ''
         _config.filenameFormat = '%image_id% - %title%'
@@ -286,10 +290,10 @@ class TestPixivHelper(unittest.TestCase):
         info = json.loads(p2.read())
         artist.ParseInfo(info, False, False)
 
-        targetDir = os.path.abspath(os.sep + 'images')
+        targetDir = os.path.abspath(f'{os.sep}images')
         _config = PixivConfig.PixivConfig()
         _config.avatarNameFormat = ''
-        _config.filenameFormat = '%member_token% (%member_id%)' + os.sep + '%R-18%' + os.sep + '%image_id% - %title% - %tags%'
+        _config.filenameFormat = f'%member_token% (%member_id%){os.sep}%R-18%{os.sep}%image_id% - %title% - %tags%'
         _config.tagsSeparator = ' '
         _config.tagsLimit = 0
         PixivHelper.set_config(_config)

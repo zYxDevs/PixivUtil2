@@ -55,13 +55,13 @@ class FanboxPost(object):
     descriptionUrlList = None
 
     def __init__(self, post_id, parent, page, tzInfo=None):
-        self.images = list()
-        self.embeddedFiles = list()
+        self.images = []
+        self.embeddedFiles = []
         self.imageId = int(post_id)
         self.parent = parent
         self._tzInfo = tzInfo
         # 949
-        self.descriptionUrlList = list()
+        self.descriptionUrlList = []
         self.linkToFile = dict()
 
         self.parsePost(page)
@@ -94,11 +94,10 @@ class FanboxPost(object):
         # Issue 1181
         if jsPost.get("coverImageUrl"):
             coverUrl = jsPost["coverImageUrl"]
+        elif jsPost.get("cover") and jsPost["cover"] is not None and jsPost["cover"]["type"] == "cover_image":
+            coverUrl = jsPost["cover"]["url"]
         else:
-            if jsPost.get("cover") and jsPost["cover"] is not None and jsPost["cover"]["type"] == "cover_image":
-                coverUrl = jsPost["cover"]["url"]
-            else:
-                coverUrl = None
+            coverUrl = None
         # Issue #930
         if not self.coverImageUrl and coverUrl:
             self.coverImageUrl = _re_fanbox_cover.sub("fanbox", coverUrl)
@@ -136,7 +135,6 @@ class FanboxPost(object):
     def parseBody(self, jsPost):
         ''' Parse general data for text and article'''
         self.body_text = ""
-        embedData = list()
         if "text" in jsPost["body"]:
             self.body_text = jsPost["body"]["text"]
         # Issue #544
@@ -169,6 +167,7 @@ class FanboxPost(object):
             self.embeddedFiles.append(jsPost["body"]["thumbnailUrl"])
 
         if "embedMap" in jsPost["body"] and jsPost["body"]["embedMap"] is not None and len(jsPost["body"]["embedMap"]) > 0:
+            embedData = []
             for embed in jsPost["body"]["embedMap"]:
                 embedData.append(jsPost["body"]["embedMap"][embed])
                 self.embeddedFiles.append(jsPost["body"]["embedMap"][embed])
@@ -221,27 +220,26 @@ class FanboxPost(object):
                                     if in_style:
                                         sections.append(f"<span style='{style_clause}'>")
                             for style in styles:
+                                style_clause = style["type"]
+                                if style_clause != "bold":
+                                    raise PixivException(f"Unknown style: {style_clause}", errorCode=PixivException.OTHER_ERROR)
+                                style_clause = "font-weight: bold;"
                                 style_offset = style["offset"]
                                 style_length = style["length"]
-                                style_clause = style["type"]
-                                if style_clause == "bold":
-                                    style_clause = "font-weight: bold;"
-                                    if i > style_offset + style_length:
-                                        continue
-                                    elif i < style_offset:
-                                        break
-                                    # prioritized this situation for efficiency, nothing to do here indeed
-                                    # not sure if this is how python works
-                                    elif style_offset < i < style_offset + style_length:
-                                        pass
-                                    elif style_offset == i:
-                                        in_style = True
-                                        sections.append(f"<span style='{style_clause}'>")
-                                    elif style_offset + style_length == i:
-                                        in_style = False
-                                        sections.append("</span>")
-                                else:
-                                    raise PixivException(f"Unknown style: {style_clause}", errorCode=PixivException.OTHER_ERROR)
+                                if i > style_offset + style_length:
+                                    continue
+                                elif i < style_offset:
+                                    break
+                                # prioritized this situation for efficiency, nothing to do here indeed
+                                # not sure if this is how python works
+                                elif style_offset < i < style_offset + style_length:
+                                    pass
+                                elif style_offset == i:
+                                    in_style = True
+                                    sections.append(f"<span style='{style_clause}'>")
+                                elif style_offset + style_length == i:
+                                    in_style = False
+                                    sections.append("</span>")
                             sections.append(block_text_raw[i])
                         if in_style:
                             sections.append("</span>")
@@ -336,7 +334,7 @@ class FanboxPost(object):
                     self.try_add(link.group(), self.descriptionUrlList)
 
             # get all the keys to list
-            keys = list()
+            keys = []
             for key in embed_cfg[current_provider]["keys"]:
                 js_keys = key.split(".")
                 root = embedData
@@ -349,9 +347,7 @@ class FanboxPost(object):
                 keys.append(root)
             template = embed_cfg[current_provider]["format"]
 
-            result = template.format(*keys)
-            return result
-
+            return template.format(*keys)
         else:
             msg = f"Unsupported url embed provider = {embedData['type']} for post = {self.imageId}, please update content_provider.json."
             raise PixivException(msg, errorCode=9999, htmlPage=jsPost)
@@ -374,12 +370,14 @@ class FanboxPost(object):
             if embed_cfg[current_provider]["ignore"]:
                 return ""
 
-            content_id = None
-            for key in embed_cfg[current_provider]["keys"]:
-                if key in embedData:
-                    content_id = embedData[key]
-                    break
-
+            content_id = next(
+                (
+                    embedData[key]
+                    for key in embed_cfg[current_provider]["keys"]
+                    if key in embedData
+                ),
+                None,
+            )
             if content_id is not None and len(content_id) > 0:
                 content_format = embed_cfg[current_provider]["format"]
                 return content_format.format(content_id)
@@ -421,7 +419,7 @@ class FanboxPost(object):
 
             info = codecs.open(filename, 'wb', encoding='utf-8')
         except IOError:
-            info = codecs.open(str(self.imageId) + ".txt", 'wb', encoding='utf-8')
+            info = codecs.open(f"{str(self.imageId)}.txt", 'wb', encoding='utf-8')
             PixivHelper.get_logger().exception("Error when saving image info: %s, file is saved to: %s.txt", filename, self.imageId)
 
         info.write(f"ArtistID      = {self.parent.artistId}\r\n")
@@ -455,7 +453,7 @@ class FanboxPost(object):
             PixivHelper.makeSubdirs(filename)
             info = codecs.open(filename, 'wb', encoding='utf-8')
         except IOError:
-            info = codecs.open(str(self.imageId) + ".html", 'wb', encoding='utf-8')
+            info = codecs.open(f"{str(self.imageId)}.html", 'wb', encoding='utf-8')
             PixivHelper.get_logger().exception("Error when saving article html: %s, file is saved to: %s.html", filename, self.imageId)
 
         cover_image = ""
@@ -473,8 +471,18 @@ class FanboxPost(object):
         if self.type == "article":
             token_body_text = f'<div class="article caption">{self.body_text}</div>'
         else:
-            images = "".join(['<a href="{0}">{1}</a>'.format(x,
-                             f'<img scr="{0}"/>' if x[x.rindex(".") + 1:].lower() in ["jpg", "jpeg", "png", "bmp", "gif"] else x) for x in self.images])
+            images = "".join(
+                [
+                    '<a href="{0}">{1}</a>'.format(
+                        x,
+                        '<img scr="0"/>'
+                        if x[x.rindex(".") + 1 :].lower()
+                        in ["jpg", "jpeg", "png", "bmp", "gif"]
+                        else x,
+                    )
+                    for x in self.images
+                ]
+            )
             token_images = f'<div class="non-article images">{images}</div>'
             text = "".join(['<p>{0}</p>'.format(x.rstrip()) for x in self.body_text.split("\n")])
             token_text = f'<div class="non-article caption">{text}</div>'
@@ -486,11 +494,9 @@ class FanboxPost(object):
         page = BeautifulSoup(page, features="html5lib")
         imageATags = page.find_all("a", attrs={"href": True})
         for imageATag in imageATags:
-            tag = imageATag.img
-            if tag:
+            if tag := imageATag.img:
                 tag["src"] = imageATag["href"]
-        root = page.find("div", attrs={"class": "main"})
-        if root:
+        if root := page.find("div", attrs={"class": "main"}):
             root["class"].append("non-article" if self.type != "article" else "article")
         page = page.decode()
         html_dir = os.path.dirname(filename)
@@ -500,9 +506,9 @@ class FanboxPost(object):
                     v = os.path.relpath(v, html_dir)
                 except ValueError:
                     PixivHelper.get_logger().exception("Error when converting local paths to relative ones, absolute paths are used", filename, self.imageId)
-                    v = "file://" + v
+                    v = f"file://{v}"
             else:
-                v = "file://" + v
+                v = f"file://{v}"
             page = page.replace(k, v)
         info.write(page)
         info.close()
@@ -525,7 +531,7 @@ class FanboxArtist(object):
 
     @classmethod
     def parseArtistIds(cls, page):
-        ids = list()
+        ids = []
         js = demjson3.decode(page)
 
         if "error" in js and js["error"]:
@@ -533,10 +539,9 @@ class FanboxArtist(object):
 
         if "body" in js and js["body"] is not None:
             js_body = js["body"]
-            if "supportingPlans" in js["body"]:
+            if "supportingPlans" in js_body:
                 js_body = js_body["supportingPlans"]
-            for creator in js_body:
-                ids.append(creator["user"]["userId"])
+            ids.extend(creator["user"]["userId"] for creator in js_body)
         return ids
 
     def __init__(self, artist_id, artist_name, creator_id, tzInfo=None):
@@ -559,19 +564,12 @@ class FanboxArtist(object):
         if js["body"] is not None:
             js_body = js["body"]
 
-            posts = list()
+            posts = []
 
             if "creator" in js_body:
                 self.artistName = js_body["creator"]["user"]["name"]
 
-            if "post" in js_body:
-                # new api
-                post_root = js_body["post"]
-            else:
-                # https://www.pixiv.net/ajax/fanbox/post?postId={0}
-                # or old api
-                post_root = js_body
-
+            post_root = js_body["post"] if "post" in js_body else js_body
             for jsPost in post_root["items"]:
                 post_id = int(jsPost["id"])
                 post = FanboxPost(post_id, self, jsPost, tzInfo=self._tzInfo)
