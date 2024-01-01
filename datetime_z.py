@@ -130,8 +130,7 @@ def parse_date(value):
     Raise ValueError if the input is well formatted but not a valid date.
     Return None if the input isn't well formatted.
     """
-    match = date_re.match(value)
-    if match:
+    if match := date_re.match(value):
         kw = {k: int(v) for k, v in match.groupdict().items()}
         return datetime.date(**kw)
 
@@ -145,8 +144,7 @@ def parse_time(value):
     Return None if the input isn't well formatted, in particular if it
     contains an offset.
     """
-    match = time_re.match(value)
-    if match:
+    if match := time_re.match(value):
         kw = match.groupdict()
         if kw['microsecond']:
             kw['microsecond'] = kw['microsecond'].ljust(6, '0')
@@ -169,23 +167,23 @@ def parse_datetime(value):
     >>> parse_datetime('2013-07-23T15:10:59.34210Z')
     datetime.datetime(2013, 7, 23, 15, 10, 59, 342100, tzinfo=UTC)
     """
-    match = datetime_re.match(value)
-    if match:
-        kw = match.groupdict()
-        if kw['microsecond']:
-            kw['microsecond'] = kw['microsecond'].ljust(6, '0')
-        tzinfo = kw.pop('tzinfo')
-        if tzinfo == 'Z':
-            tzinfo = utc
-        elif tzinfo is not None:
-            offset_mins = int(tzinfo[-2:]) if len(tzinfo) > 3 else 0
-            offset = 60 * int(tzinfo[1:3]) + offset_mins
-            if tzinfo[0] == '-':
-                offset = -offset
-            tzinfo = get_fixed_timezone(offset)
-        kw = {k: int(v) for k, v in kw.items() if v is not None}
-        kw['tzinfo'] = tzinfo
-        return datetime.datetime(**kw)
+    if not (match := datetime_re.match(value)):
+        return
+    kw = match.groupdict()
+    if kw['microsecond']:
+        kw['microsecond'] = kw['microsecond'].ljust(6, '0')
+    tzinfo = kw.pop('tzinfo')
+    if tzinfo == 'Z':
+        tzinfo = utc
+    elif tzinfo is not None:
+        offset_mins = int(tzinfo[-2:]) if len(tzinfo) > 3 else 0
+        offset = 60 * int(tzinfo[1:3]) + offset_mins
+        if tzinfo[0] == '-':
+            offset = -offset
+        tzinfo = get_fixed_timezone(offset)
+    kw = {k: int(v) for k, v in kw.items() if v is not None}
+    kw['tzinfo'] = tzinfo
+    return datetime.datetime(**kw)
 
 
 def parse_duration(value):
@@ -196,21 +194,23 @@ def parse_duration(value):
     Also supports ISO 8601 representation and PostgreSQL's day-time interval
     format.
     """
-    match = (
-        standard_duration_re.match(value) or
-        iso8601_duration_re.match(value) or
-        postgres_interval_re.match(value)
-    )
-    if match:
-        kw = match.groupdict()
-        days = datetime.timedelta(float(kw.pop('days', 0) or 0))
-        sign = -1 if kw.pop('sign', '+') == '-' else 1
-        if kw.get('microseconds'):
-            kw['microseconds'] = kw['microseconds'].ljust(6, '0')
-        if kw.get('seconds') and kw.get('microseconds') and kw['seconds'].startswith('-'):
-            kw['microseconds'] = '-' + kw['microseconds']
-        kw = {k: float(v) for k, v in kw.items() if v is not None}
-        return days + sign * datetime.timedelta(**kw)
+    if not (
+        match := (
+            standard_duration_re.match(value)
+            or iso8601_duration_re.match(value)
+            or postgres_interval_re.match(value)
+        )
+    ):
+        return
+    kw = match.groupdict()
+    days = datetime.timedelta(float(kw.pop('days', 0) or 0))
+    sign = -1 if kw.pop('sign', '+') == '-' else 1
+    if kw.get('microseconds'):
+        kw['microseconds'] = kw['microseconds'].ljust(6, '0')
+    if kw.get('seconds') and kw.get('microseconds') and kw['seconds'].startswith('-'):
+        kw['microseconds'] = '-' + kw['microseconds']
+    kw = {k: float(v) for k, v in kw.items() if v is not None}
+    return days + sign * datetime.timedelta(**kw)
 
 
 if __name__ == "__main__":

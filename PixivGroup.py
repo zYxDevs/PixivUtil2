@@ -18,8 +18,8 @@ class PixivGroup(object):
     def __init__(self, jsonResponse):
         data = json.loads(jsonResponse)
         self.maxId = data["max_id"]
-        self.imageList = list()
-        self.externalImageList = list()
+        self.imageList = []
+        self.externalImageList = []
 
         for imageData in data["imageArticles"]:
             if "id" in imageData["detail"]:
@@ -69,9 +69,7 @@ class PixivGroup(object):
     @staticmethod
     def parseToken(url):
         token = url.split('/')[-2]
-        if token != "Common":
-            return token
-        return None
+        return token if token != "Common" else None
 
     def shortenPixivUrlInBody(self, string):
         shortened = ""
@@ -82,5 +80,5 @@ class PixivGroup(object):
             else:
                 shortened = "Manga={0}".format(result[0][1])
         string = self.short_pattern.sub("", string).strip()
-        string = string + " " + shortened
+        string = f"{string} {shortened}"
         return string

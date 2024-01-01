@@ -319,27 +319,23 @@ class PixivConfig():
             for item in g:
                 config.set(item.section, item.option, self.__getattribute__(item.option))
 
-        if path is not None:
-            configlocation = path
-        else:
-            configlocation = 'config.ini'
-
+        configlocation = path if path is not None else 'config.ini'
         try:
             # with codecs.open('config.ini.bak', encoding = 'utf-8', mode = 'wb') as configfile:
-            with open(configlocation + '.tmp', 'w', encoding='utf8') as configfile:
+            with open(f'{configlocation}.tmp', 'w', encoding='utf8') as configfile:
                 config.write(configfile)
                 configfile.close()
 
             if os.path.exists(configlocation):
                 if error:
-                    backupName = configlocation + '.error-' + str(int(time.time()))
-                    print("Backing up old config (error exist!) to " + backupName)
+                    backupName = f'{configlocation}.error-{int(time.time())}'
+                    print(f"Backing up old config (error exist!) to {backupName}")
                     shutil.move(configlocation, backupName)
                 else:
                     print("Backing up old config to config.ini.bak")
-                    shutil.move(configlocation, configlocation + '.bak')
+                    shutil.move(configlocation, f'{configlocation}.bak')
             self.__logger.debug(f"renaming {configlocation}.tmp to {configlocation}")
-            os.rename(configlocation + '.tmp', configlocation)
+            os.rename(f'{configlocation}.tmp', configlocation)
         except BaseException:
             self.__logger.exception('Error at writeConfig()')
             raise
@@ -353,11 +349,10 @@ class PixivConfig():
                     "FFmpeg", "Ugoira", "DownloadControl"]
         sections.extend([k for k in groups if k not in sections])
         for section in sections:
-            g = groups.get(section)
-            if g:
+            if g := groups.get(section):
                 print(f" [{section}]")
                 for item in g:
-                    print(f" - {item.option:{25}} = {self.__getattribute__(item.option)}")
+                    print(f" - {item.option:25} = {self.__getattribute__(item.option)}")
         print('')
 
 

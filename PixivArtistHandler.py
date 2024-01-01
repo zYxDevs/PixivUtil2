@@ -70,14 +70,15 @@ def process_member(caller,
                 except PixivException as ex:
                     caller.ERROR_CODE = ex.errorCode
                     PixivHelper.print_and_log('info', f'Member ID ({member_id}): {ex}')
-                    if ex.errorCode == PixivException.NO_IMAGES:
-                        pass
-                    else:
+                    if ex.errorCode != PixivException.NO_IMAGES:
                         if list_page is None:
                             list_page = ex.htmlPage
                         if list_page is not None:
                             PixivHelper.dump_html(f"Dump for {member_id} Error Code {ex.errorCode}.html", list_page)
-                        if ex.errorCode == PixivException.USER_ID_NOT_EXISTS or ex.errorCode == PixivException.USER_ID_SUSPENDED:
+                        if ex.errorCode in [
+                            PixivException.USER_ID_NOT_EXISTS,
+                            PixivException.USER_ID_SUSPENDED,
+                        ]:
                             db.setIsDeletedFlagForMemberId(int(member_id))
                             PixivHelper.print_and_log('info', f'Set IsDeleted for MemberId: {member_id} not exist.')
                             # db.deleteMemberByMemberId(member_id)
@@ -173,12 +174,11 @@ def process_member(caller,
                     continue
                 if result == PixivConstant.PIXIVUTIL_KEYBOARD_INTERRUPT:
                     choice = input("Keyboard Interrupt detected, continue to next image (Y/N)").rstrip("\r")
-                    if choice.upper() == 'N':
-                        PixivHelper.print_and_log("info", f"Member: {member_id}, processing aborted")
-                        flag = False
-                        break
-                    else:
+                    if choice.upper() != 'N':
                         continue
+                    PixivHelper.print_and_log("info", f"Member: {member_id}, processing aborted")
+                    flag = False
+                    break
                 # return code from process image
                 if result == PixivConstant.PIXIVUTIL_SKIP_OLDER:
                     PixivHelper.print_and_log("info", "Reached older images, skippin to next member.")
@@ -234,11 +234,7 @@ def process_member(caller,
 
 
 def process_avatar_bg(caller, config, user_dir, notifier, artist):
-    if user_dir == '':
-        target_dir = config.rootDirectory
-    else:
-        target_dir = user_dir
-
+    target_dir = config.rootDirectory if user_dir == '' else user_dir
     (filename_avatar, filename_bg) = PixivHelper.create_avabg_filename(artist, target_dir, config)
     if not caller.DEBUG_SKIP_PROCESS_IMAGE:
         if artist.artistAvatar.find('no_profile') == -1:

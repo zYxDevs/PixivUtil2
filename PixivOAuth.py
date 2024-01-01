@@ -109,8 +109,7 @@ def create_scraper(sess=None, **kwargs):
 
     if sess:
         for attr in ['auth', 'cert', 'cookies', 'headers', 'hooks', 'params', 'proxies', 'data', 'verify']:
-            val = getattr(sess, attr, None)
-            if val:
+            if val := getattr(sess, attr, None):
                 setattr(scraper, attr, val)
     return scraper
 # end monkey patch
@@ -178,7 +177,7 @@ class PixivOAuth():
     def _get_default_headers(self):
         # fix #530
         # 2019-11-17T10:04:40+8.00
-        time = "{0}{1}".format(datetime.now().isoformat()[0:19], self._tzInfo)
+        time = "{0}{1}".format(datetime.now().isoformat()[:19], self._tzInfo)
         secret = "28c1fdd170a5204386cb1313c7077b34f83e4aaf4aa829ce78c231e05b0bae2c"
         time_hash = hashlib.md5("{0}{1}".format(time, secret).encode('utf-8'))
         return {'User-Agent': PixivOAuthBrowser.USER_AGENT,
@@ -199,12 +198,13 @@ class PixivOAuth():
 
     def login_with_username_and_password(self):
         PixivHelper.get_logger().info("Login to OAuth using username and password.")
-        oauth_response = self._req.post(self._url,
-                                        data=self._get_values_for_login(),
-                                        headers=self._get_default_headers(),
-                                        proxies=self._proxies,
-                                        verify=self._validate_ssl)
-        return oauth_response
+        return self._req.post(
+            self._url,
+            data=self._get_values_for_login(),
+            headers=self._get_default_headers(),
+            proxies=self._proxies,
+            verify=self._validate_ssl,
+        )
 
     def login(self):
         oauth_response = None

@@ -36,11 +36,10 @@ def get_version():
     version = main_ns['PIXIVUTIL_VERSION']
     v_parts = version.split('-', 1)
     # 20201231
-    main_version = '{0}.{1}.{2}'.format(v_parts[0][0:4], int(v_parts[0][4:6]), int(v_parts[0][6:8]))
-    if '-' in version:
-        version = main_version + '.{}'.format(v_parts[1])
-    else:
-        version = main_version
+    main_version = '{0}.{1}.{2}'.format(
+        v_parts[0][:4], int(v_parts[0][4:6]), int(v_parts[0][6:8])
+    )
+    version = f'{main_version}.{v_parts[1]}' if '-' in version else main_version
     return version
 
 

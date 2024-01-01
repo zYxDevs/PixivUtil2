@@ -20,16 +20,17 @@ class PixivBookmark(object):
     def parseBookmark(page, root_directory, db_path, locale='', is_json=False):
         '''Parse favorite artist page'''
         from PixivDBManager import PixivDBManager
-        bookmarks = list()
-        result2 = list()
+        bookmarks = []
+        result2 = []
         db = PixivDBManager(root_directory=root_directory, target=db_path)
 
         if is_json:
             parsed = json.loads(page)
-            for member in parsed["body"]["users"]:
-                if "isAdContainer" in member and member["isAdContainer"]:
-                    continue
-                result2.append(member["userId"])
+            result2.extend(
+                member["userId"]
+                for member in parsed["body"]["users"]
+                if "isAdContainer" not in member or not member["isAdContainer"]
+            )
         else:
             # old method
             parse_page = BeautifulSoup(page, features="html5lib")
@@ -58,7 +59,7 @@ class PixivBookmark(object):
     @staticmethod
     def parseImageBookmark(page, image_tags_filter=None):
         total_images = 0
-        imageList = list()
+        imageList = []
 
         image_bookmark = json.loads(page)
         total_images = image_bookmark["body"]["total"]  # total bookmarks, won't be the same if image_tags_filter used.
@@ -87,13 +88,13 @@ class PixivBookmark(object):
     @staticmethod
     def exportList(lst, filename):
         if not filename.endswith('.txt'):
-            filename = filename + '.txt'
+            filename = f'{filename}.txt'
         writer = codecs.open(filename, 'w', encoding='utf-8')
-        writer.write(f'###Export members date: {datetime.today()} ###\n')
+        writer.write(f'###Export members date: {datetime.now()} ###\n')
         for item in lst:
             data = str(item.memberId)
             if len(item.path) > 0:
-                data = data + ' ' + item.path
+                data = f'{data} {item.path}'
             writer.write(data)
             writer.write('\r\n')
         writer.write('###END-OF-FILE###')
@@ -102,9 +103,9 @@ class PixivBookmark(object):
     @staticmethod
     def export_image_list(lst, filename):
         if not filename.endswith('.txt'):
-            filename = filename + '.txt'
+            filename = f'{filename}.txt'
         writer = codecs.open(filename, 'w', encoding='utf-8')
-        writer.write(f'###Export images date: {datetime.today()} ###\n')
+        writer.write(f'###Export images date: {datetime.now()} ###\n')
         for item in lst:
             data = str(item)
             writer.write(data)
@@ -122,17 +123,17 @@ class PixivNewIllustBookmark(object):
     def __init__(self, page):
         self.__ParseNewIllustBookmark(page)
         # self.__CheckLastPage(page)
-        self.haveImages = bool(len(self.imageList) > 0)
+        self.haveImages = len(self.imageList) > 0
 
     def __ParseNewIllustBookmark(self, page):
-        self.imageList = list()
+        self.imageList = []
         page_json = json.loads(page)
 
         if bool(page_json["error"]):
             raise PixivException(page_json["message"], errorCode=PixivException.OTHER_ERROR)
 
         # 1028
-        for image_id in page_json["body"]["page"]["ids"]:
-            self.imageList.append(int(image_id))
-
+        self.imageList.extend(
+            int(image_id) for image_id in page_json["body"]["page"]["ids"]
+        )
         return self.imageList

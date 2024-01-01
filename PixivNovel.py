@@ -88,8 +88,8 @@ class PixivNovel:
         self.worksDate = self.worksDateDateTime.strftime(tempDateFormat)
 
         # tags
-        self.imageTags = list()
-        self.tags = list()
+        self.imageTags = []
+        self.tags = []
         tags = root["tags"]
         if tags is not None:
             tags = root["tags"]["tags"]
@@ -112,16 +112,14 @@ class PixivNovel:
             self.tags.append(PixivTagData(tag["tag"], tag))
 
     def write_content(self, filename):
-        ft = open("novel_template.html")
-        template_str = ft.read()
-        ft.close()
-
+        with open("novel_template.html") as ft:
+            template_str = ft.read()
         fh = None
         try:
             PixivHelper.makeSubdirs(filename)
             fh = codecs.open(filename, 'wb', encoding='utf-8')
         except IOError:
-            fh = codecs.open(str(self.novel_id) + ".html", 'wb', encoding='utf-8')
+            fh = codecs.open(f"{str(self.novel_id)}.html", 'wb', encoding='utf-8')
             PixivHelper.get_logger().exception("Error when saving novel: %s, file is saved to: %s.html", filename, str(self.novel_id))
 
         if fh is not None:

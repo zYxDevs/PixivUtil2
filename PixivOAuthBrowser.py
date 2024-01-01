@@ -74,14 +74,32 @@ def login():
 
     print(Style.BRIGHT + Fore.YELLOW + "Instructions: " + Style.RESET_ALL)
     print("1. This will open a new browser to login to Pixiv site to get the code.")
-    print("1b. In case the browser will not open, or you are using an headless server, use this link: " + f"{LOGIN_URL}?{urlencode(login_params)}")
-    print("2. Open dev console " + Fore.YELLOW + "(F12)" + Style.RESET_ALL + " and switch to network tab." + Style.RESET_ALL)
-    print("3. Enable persistent logging (" + Fore.YELLOW + "\"Preserve log\"" + Style.RESET_ALL + "). " + Style.RESET_ALL)
-    print("4. Type into the filter field: '" + Fore.YELLOW + "callback?" + Style.RESET_ALL + "'." + Style.RESET_ALL)
+    print(
+        f"1b. In case the browser will not open, or you are using an headless server, use this link: {LOGIN_URL}?{urlencode(login_params)}"
+    )
+    print(
+        f"2. Open dev console {Fore.YELLOW}(F12){Style.RESET_ALL} and switch to network tab.{Style.RESET_ALL}"
+    )
+    print(
+        f"3. Enable persistent logging ({Fore.YELLOW}"
+        + "\"Preserve log\""
+        + Style.RESET_ALL
+        + "). "
+        + Style.RESET_ALL
+    )
+    print(
+        f"4. Type into the filter field: '{Fore.YELLOW}callback?{Style.RESET_ALL}'.{Style.RESET_ALL}"
+    )
     print("5. Proceed with Pixiv login.")
-    print("6. After logging in you should see a blank page and request that looks like this:" + Style.RESET_ALL)
-    print("   'https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback?state=...&" + Fore.YELLOW + "code=..." + Style.RESET_ALL + "'" + Style.RESET_ALL)
-    print("7. Copy value of the " + Fore.YELLOW + "code param" + Style.RESET_ALL + " into the prompt and hit the Enter key.")
+    print(
+        f"6. After logging in you should see a blank page and request that looks like this:{Style.RESET_ALL}"
+    )
+    print(
+        f"   'https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback?state=...&{Fore.YELLOW}code=...{Style.RESET_ALL}'{Style.RESET_ALL}"
+    )
+    print(
+        f"7. Copy value of the {Fore.YELLOW}code param{Style.RESET_ALL} into the prompt and hit the Enter key."
+    )
     input("Press enter when you ready.")
     open_url(f"{LOGIN_URL}?{urlencode(login_params)}")
 
@@ -90,7 +108,7 @@ def login():
     except (EOFError, KeyboardInterrupt):
         return
 
-    response = session.post(
+    return session.post(
         AUTH_TOKEN_URL,
         data={
             "client_id": CLIENT_ID,
@@ -103,7 +121,6 @@ def login():
         },
         headers={"User-Agent": USER_AGENT},
     )
-    return response
     # login_data = print_auth_token_response(response)
     # return login_data
 
@@ -121,8 +138,7 @@ def refresh(refresh_token):
         },
         headers={"User-Agent": USER_AGENT},
     )
-    login_data = print_auth_token_response(response)
-    return login_data
+    return print_auth_token_response(response)
 
 
 if __name__ == "__main__":

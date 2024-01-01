@@ -21,7 +21,7 @@ def process_bookmark(caller,
     br: PixivBrowser = caller.__br__
 
     try:
-        total_list = list()
+        total_list = []
         print(f"My Member Id = {br._myId}")
         if hide != 'o':
             print("Importing Bookmarks...")
@@ -29,17 +29,17 @@ def process_bookmark(caller,
         if hide != 'n':
             print("Importing Private Bookmarks...")
             total_list.extend(get_bookmarks(caller, config, True, start_page, end_page, br._myId))
-        print(f"Result: {str(len(total_list))} items.")
+        print(f"Result: {len(total_list)} items.")
         i = 0
         current_member = 1
         for item in total_list:
             print("%d/%d\t%f %%" % (i, len(total_list), 100.0 * i / float(len(total_list))))
             i += 1
-            prefix = "[{0} of {1}]".format(current_member, len(total_list))
-
             if str(item.memberId) in caller.__blacklistMembers:
                 PixivHelper.print_and_log('warn', f'Skipping member id: {item.memberId} by blacklist_members.txt.')
             else:
+                prefix = "[{0} of {1}]".format(current_member, len(total_list))
+
                 PixivArtistHandler.process_member(caller,
                                                   config,
                                                   item.memberId,
@@ -49,7 +49,7 @@ def process_bookmark(caller,
 
             current_member = current_member + 1
 
-        if len(total_list) > 0:
+        if total_list:
             print("%d/%d\t%f %%" % (i, len(total_list), 100.0 * i / float(len(total_list))))
         else:
             print("Cannot find any followed member.")
@@ -69,9 +69,9 @@ def process_image_bookmark(caller,
                            use_image_tag=False):
     try:
         print("Importing image bookmarks...")
-        totalList = list()
-        private_list = list()
-        public_list = list()
+        totalList = []
+        private_list = []
+        public_list = []
         image_count = 1
         total_bookmark_count = 0
 
@@ -253,7 +253,7 @@ def export_bookmark(caller,
                     end_page=0,
                     member_id=None):
     try:
-        total_list = list()
+        total_list = []
         if hide != 'o':
             print("Importing Bookmarks...")
             total_list.extend(get_bookmarks(caller, config, False, start_page, end_page, member_id))
@@ -279,9 +279,9 @@ def export_image_bookmark(caller,
                           filename='exported_images.txt'):
     try:
         print("Getting image bookmarks...")
-        total_list = list()
-        private_list = list()
-        public_list = list()
+        total_list = []
+        private_list = []
+        public_list = []
         total_bookmark_count = 0
 
         if hide == 'n':
@@ -309,8 +309,8 @@ def export_image_bookmark(caller,
 
 
 def export_image_table(caller, filename, pixiv, fanbox, sketch):
-    export_list = list()
-    table = list()
+    export_list = []
+    table = []
     try:
         if pixiv == 'o':
             table.append("Pixiv")
@@ -339,7 +339,7 @@ def get_bookmarks(caller, config, hide, start_page=1, end_page=0, member_id=None
     br: PixivBrowser = caller.__br__
 
     """Get User's bookmarked artists """
-    total_list = list()
+    total_list = []
     i = start_page
     limit = 48
     offset = 0
@@ -354,18 +354,13 @@ def get_bookmarks(caller, config, hide, start_page=1, end_page=0, member_id=None
             break
         PixivHelper.print_and_log('info', f'Exporting page {i}')
         if member_id:
-            is_json = True
             offset = limit * (i - 1)
-            url = f'https://www.pixiv.net/ajax/user/{member_id}/following?offset={offset}&limit={limit}'
         else:
             # Issue #942
             member_id = br._myId
-            is_json = True
-            url = f'https://www.pixiv.net/ajax/user/{member_id}/following?offset={offset}&limit={limit}'
-        if hide:
-            url = url + "&rest=hide"
-        else:
-            url = url + "&rest=show"
+        url = f'https://www.pixiv.net/ajax/user/{member_id}/following?offset={offset}&limit={limit}'
+        is_json = True
+        url = f"{url}&rest=hide" if hide else f"{url}&rest=show"
         url = url + locale
 
         PixivHelper.print_and_log('info', f"Source URL: {url}")
@@ -385,7 +380,7 @@ def get_bookmarks(caller, config, hide, start_page=1, end_page=0, member_id=None
             break
         total_list.extend(bookmarks)
         i = i + 1
-        print(str(len(bookmarks)), 'items')
+        print(len(bookmarks), 'items')
         PixivHelper.wait(config=config)
     return total_list
 
@@ -393,7 +388,7 @@ def get_bookmarks(caller, config, hide, start_page=1, end_page=0, member_id=None
 def get_image_bookmark(caller, config, hide, start_page=1, end_page=0, tag=None, use_image_tag=False):
     """Get user's image bookmark"""
     br: PixivBrowser = caller.__br__
-    total_list = list()
+    total_list = []
     i = start_page
     offset = 0
     limit = 48
